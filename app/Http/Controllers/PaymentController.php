@@ -21,7 +21,7 @@ class PaymentController extends Controller
             ->orderBy('payment_date')
             ->orderBy('id')]);
         $paidAmount = (float) $quote->payments->sum('amount');
-        $remainingAmount = max(0, round((float) $quote->total_amount - $paidAmount, 2));
+        $remainingAmount = max(0, round((float) $quote->labor_amount - $paidAmount, 2));
         $pdf = Pdf::loadView('admin.quotes.payments-pdf', compact('quote', 'paidAmount', 'remainingAmount'))
             ->setPaper('a4');
 
@@ -48,7 +48,7 @@ class PaymentController extends Controller
             }
 
             $paidAmount = (float) $lockedQuote->payments()->sum('amount');
-            $remainingAmount = round((float) $lockedQuote->total_amount - $paidAmount, 2);
+            $remainingAmount = round((float) $lockedQuote->labor_amount - $paidAmount, 2);
             $amount = round((float) $data['amount'], 2);
 
             if ($remainingAmount <= 0 || $amount > $remainingAmount) {
