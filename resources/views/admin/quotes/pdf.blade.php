@@ -14,6 +14,7 @@
         .meta { color: #6b6d67; font-size: 11px; letter-spacing: 1px; margin-top: 20px; }
         .box { background: #f5f4f0; margin-top: 18px; padding: 16px; }
         .box strong { display: block; font-size: 16px; margin: 5px 0; }
+        .observations p { margin-bottom: 0; white-space: pre-line; }
         .description { min-height: 90px; }
         table { border-collapse: collapse; margin-top: 25px; width: 100%; }
         th { border-bottom: 1px solid #d9d8d1; color: #696b64; font-size: 10px; letter-spacing: .5px; text-align: left; }
@@ -31,10 +32,13 @@
     <h1>{{ $quote->project_name }}</h1>
     <div class="muted">Emitido el {{ $quote->issue_date->format('d/m/Y') }} · Válido hasta el {{ $quote->expiry_date->format('d/m/Y') }}</div>
     <div class="box"><span class="meta">CLIENTE</span><strong>{{ $quote->client->name }}</strong>{{ $quote->client->email }} @if ($quote->client->phone) · {{ $quote->client->phone }} @endif<br>{{ $quote->client->address }}</div>
+    @if ($quote->observations)
+        <div class="box observations"><span class="meta">OBSERVACIONES</span><p>{{ $quote->observations }}</p></div>
+    @endif
     <div class="box description"><span class="meta">TAREAS INCLUIDAS</span>
         <table><thead><tr><th>TAREA / DESCRIPCIÓN</th><th>MANO DE OBRA</th></tr></thead><tbody>
             @forelse ($quote->tasks as $task)
-                <tr><td class="task-text">{{ $task->description }}</td><td>$ {{ number_format((float) $task->labor_amount, 2, ',', '.') }} ARS</td></tr>
+                <tr><td class="task-text">{{ $task->description }} @if ($task->pricing_mode === 'quantity')<br><span class="muted">{{ number_format((float) $task->quantity, 3, ',', '.') }} {{ $task->unit }} × $ {{ number_format((float) $task->unit_price, 2, ',', '.') }} por {{ $task->unit }}</span>@endif</td><td>$ {{ number_format((float) $task->labor_amount, 2, ',', '.') }} ARS</td></tr>
             @empty
                 <tr><td class="task-text">{{ $quote->description }}</td><td>$ {{ number_format((float) $quote->labor_amount, 2, ',', '.') }} ARS</td></tr>
             @endforelse

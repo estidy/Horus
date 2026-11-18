@@ -24,6 +24,7 @@ class Quote extends Model
         'issue_date',
         'expiry_date',
         'description',
+        'observations',
         'labor_amount',
         'materials_amount',
         'total_amount',

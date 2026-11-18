@@ -101,6 +101,7 @@ class HorusWorkflowTest extends TestCase
             'client_id' => $client->id,
             'project_name' => 'Reforma de baño',
             'issue_date' => '2026-04-10',
+            'observations' => 'Coordinar corte de agua con el cliente.',
             'tasks' => [
                 ['description' => 'Retiro de revestimientos', 'labor_amount' => '200000.00'],
                 ['description' => 'Colocación de cerámicos', 'labor_amount' => '150000.00'],
@@ -112,6 +113,7 @@ class HorusWorkflowTest extends TestCase
         $quote = Quote::firstOrFail();
         $response->assertRedirect(route('admin.presupuestos.show', $quote));
         $this->assertSame('2026-05-01', $quote->expiry_date->format('Y-m-d'));
+        $this->assertSame('Coordinar corte de agua con el cliente.', $quote->observations);
         $this->assertSame('350000.00', $quote->labor_amount);
         $this->assertSame('475000.00', $quote->total_amount);
         $this->assertDatabaseCount('quote_tasks', 2);
@@ -120,11 +122,18 @@ class HorusWorkflowTest extends TestCase
             ->get(route('admin.presupuestos.edit', $quote))
             ->assertOk()
             ->assertSee('Retiro de revestimientos')
-            ->assertSee('Colocación de cerámicos');
+            ->assertSee('Colocación de cerámicos')
+            ->assertSee('Coordinar corte de agua con el cliente.');
 
         $pdfHtml = view('admin.quotes.pdf', ['quote' => $quote->load('client', 'tasks')])->render();
         $this->assertStringNotContainsString('Aceptado', $pdfHtml);
         $this->assertStringContainsString('Retiro de revestimientos', $pdfHtml);
+        $this->assertStringContainsString('Coordinar corte de agua con el cliente.', $pdfHtml);
+
+        $this->get(route('admin.presupuestos.show', $quote))
+            ->assertOk()
+            ->assertSee('OBSERVACIONES')
+            ->assertSee('Coordinar corte de agua con el cliente.');
 
         $this->actingAs($admin)
             ->get(route('admin.presupuestos.pdf', $quote))
@@ -135,6 +144,7 @@ class HorusWorkflowTest extends TestCase
             'client_id' => $client->id,
             'project_name' => 'Reforma de baño',
             'issue_date' => '2026-04-15',
+            'observations' => 'Trabajo sujeto a inspección.',
             'tasks' => [
                 ['description' => 'Reforma completa del baño', 'labor_amount' => '360000.00'],
                 ['description' => 'Tareas sin cargo adicional', 'labor_amount' => '0'],
@@ -144,10 +154,76 @@ class HorusWorkflowTest extends TestCase
         ])->assertRedirect(route('admin.presupuestos.show', $quote));
 
         $this->assertSame('2026-05-06', $quote->fresh()->expiry_date->format('Y-m-d'));
+        $this->assertSame('Trabajo sujeto a inspección.', $quote->fresh()->observations);
         $this->assertSame('rejected', $quote->fresh()->status);
         $this->assertSame('360000.00', $quote->fresh()->labor_amount);
         $this->assertSame('485000.00', $quote->fresh()->total_amount);
         $this->assertDatabaseCount('quote_tasks', 2);
+    }
+
+    public function test_quote_task_labor_can_be_calculated_from_quantity_and_unit_price(): void
+    {
+        $admin = User::factory()->create();
+        $client = Client::create(['name' => 'Ana Pérez']);
+
+        $this->actingAs($admin)->post(route('admin.presupuestos.store'), [
+            'client_id' => $client->id,
+            'project_name' => 'Colocación de cerámicos',
+            'issue_date' => '2026-04-10',
+            'tasks' => [
+                [
+                    'description' => 'Colocación de piso',
+                    'pricing_mode' => 'quantity',
+                    'quantity' => '12.5',
+                    'unit' => 'm2',
+                    'unit_price' => '850.00',
+                    'labor_amount' => '999999.00',
+                ],
+                [
+                    'description' => 'Colocación de zócalos',
+                    'pricing_mode' => 'quantity',
+                    'quantity' => '2.5',
+                    'unit' => 'other',
+                    'custom_unit' => 'paño',
+                    'unit_price' => '700.00',
+                ],
+                [
+                    'description' => 'Preparación',
+                    'pricing_mode' => 'fixed',
+                    'labor_amount' => '5000.00',
+                ],
+            ],
+            'materials_amount' => '3000.00',
+            'status' => 'pending',
+        ])->assertRedirect();
+
+        $quote = Quote::with('tasks')->firstOrFail();
+        $this->assertSame('10625.00', $quote->tasks[0]->labor_amount);
+        $this->assertSame('m²', $quote->tasks[0]->unit);
+        $this->assertSame('1750.00', $quote->tasks[1]->labor_amount);
+        $this->assertSame('paño', $quote->tasks[1]->unit);
+        $this->assertSame('5000.00', $quote->tasks[2]->labor_amount);
+        $this->assertSame('17375.00', $quote->labor_amount);
+        $this->assertSame('20375.00', $quote->total_amount);
+
+        $this->get(route('admin.presupuestos.edit', $quote))
+            ->assertOk()
+            ->assertSee('Por cantidad')
+            ->assertSee('paño')
+            ->assertSee('name="tasks[0][pricing_mode]"', false)
+            ->assertSee('name="tasks[0][quantity]"', false)
+            ->assertSee('name="tasks[0][unit_price]"', false);
+
+        $this->get(route('admin.presupuestos.show', $quote))
+            ->assertOk()
+            ->assertSee('12,500 m²')
+            ->assertSee('paño');
+
+        $pdfHtml = view('admin.quotes.pdf', [
+            'quote' => $quote->load('client', 'tasks'),
+        ])->render();
+        $this->assertStringContainsString('12,500 m²', $pdfHtml);
+        $this->assertStringContainsString('paño', $pdfHtml);
     }
 
     public function test_quote_search_matches_project_or_client_and_status(): void
@@ -208,18 +284,18 @@ class HorusWorkflowTest extends TestCase
             ->get(route('admin.presupuestos.show', $quote))
             ->assertOk()
             ->assertSee('$ 300,00')
-            ->assertSee('$ 700,00')
+            ->assertSee('$ 500,00')
             ->assertSee('TX-123')
             ->assertSee('Descargar reporte');
 
         $reportHtml = view('admin.quotes.payments-pdf', [
             'quote' => $quote->load('client', 'payments'),
             'paidAmount' => 300.0,
-            'remainingAmount' => 700.0,
+            'remainingAmount' => 500.0,
         ])->render();
         $this->assertStringContainsString('REPORTE DE PAGOS', $reportHtml);
         $this->assertStringContainsString('TX-123', $reportHtml);
-        $this->assertStringContainsString('$ 700,00 ARS', $reportHtml);
+        $this->assertStringContainsString('$ 500,00 ARS', $reportHtml);
 
         $this->actingAs($admin)
             ->get(route('admin.presupuestos.pagos.pdf', $quote))
@@ -228,7 +304,7 @@ class HorusWorkflowTest extends TestCase
 
         $this->from(route('admin.presupuestos.show', $quote))
             ->post(route('admin.presupuestos.pagos.store', $quote), [
-                'amount' => '700.01',
+                'amount' => '500.01',
                 'payment_date' => '2026-04-12',
                 'method' => 'transfer',
             ])

@@ -6,7 +6,7 @@
 @section('content')
 @php
     $paidAmount = (float) $quote->payments->sum('amount');
-    $remainingAmount = max(0, round((float) $quote->total_amount - $paidAmount, 2));
+    $remainingAmount = max(0, round((float) $quote->labor_amount - $paidAmount, 2));
 @endphp
 <div class="page-heading"><div><a class="back-link" href="{{ route('admin.presupuestos.index') }}">← Volver a presupuestos</a><p class="eyebrow">PRESUPUESTO #{{ str_pad((string) $quote->id, 5, '0', STR_PAD_LEFT) }}</p><h1>{{ $quote->project_name }}</h1><p>Creado el {{ $quote->issue_date->format('d/m/Y') }}</p></div><div class="heading-actions"><a class="button button-outline" href="{{ route('admin.presupuestos.edit', $quote) }}">Editar</a><a class="button button-dark" href="{{ route('admin.presupuestos.pdf', $quote) }}">↓ Descargar PDF</a></div></div>
 <section class="panel quote-detail">
@@ -14,11 +14,14 @@
     <div class="quote-dates"><div><span class="detail-label">FECHA DE EMISIÓN</span><strong>{{ $quote->issue_date->format('d/m/Y') }}</strong></div><div><span class="detail-label">VÁLIDO HASTA</span><strong>{{ $quote->expiry_date->format('d/m/Y') }}</strong><small>21 días desde la emisión</small></div></div>
     <div class="quote-description"><span class="detail-label">TAREAS INCLUIDAS</span>
         @if ($quote->tasks->isNotEmpty())
-            <div class="quote-task-list">@foreach ($quote->tasks as $task)<div><p>{{ $task->description }}</p><strong>$ {{ number_format((float) $task->labor_amount, 2, ',', '.') }}</strong></div>@endforeach</div>
+            <div class="quote-task-list">@foreach ($quote->tasks as $task)<div><p>{{ $task->description }} @if ($task->pricing_mode === 'quantity')<small>{{ number_format((float) $task->quantity, 3, ',', '.') }} {{ $task->unit }} × $ {{ number_format((float) $task->unit_price, 2, ',', '.') }} por {{ $task->unit }}</small>@endif</p><strong>$ {{ number_format((float) $task->labor_amount, 2, ',', '.') }}</strong></div>@endforeach</div>
         @else
             <p>{{ $quote->description }}</p>
         @endif
     </div>
+    @if ($quote->observations)
+        <div class="quote-observations"><span class="detail-label">OBSERVACIONES</span><p>{{ $quote->observations }}</p></div>
+    @endif
     <div class="quote-costs"><div><span>Mano de obra</span><strong>$ {{ number_format((float) $quote->labor_amount, 2, ',', '.') }}</strong></div><div><span>Materiales</span><strong>$ {{ number_format((float) $quote->materials_amount, 2, ',', '.') }}</strong></div><div class="quote-total"><span>TOTAL DEL PRESUPUESTO</span><strong>$ {{ number_format((float) $quote->total_amount, 2, ',', '.') }} <small>ARS</small></strong></div></div>
     @if ($quote->status === 'accepted')
         <section class="payment-section">
