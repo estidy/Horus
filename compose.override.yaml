@@ -1,0 +1,10 @@
+services:
+  app:
+    volumes:
+      - ./:/var/www/html
+      - horus_vendor:/var/www/html/vendor
+      - horus_bootstrap_cache:/var/www/html/bootstrap/cache
+
+volumes:
+  horus_vendor:
+  horus_bootstrap_cache:
