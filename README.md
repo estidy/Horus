@@ -20,7 +20,7 @@ Sitio público y panel de gestión desarrollado con Laravel 12, PHP 8.2+ y Maria
 <img src="captures/image_3.PNG" alt="presupuestos">
 
 ### Clientes
-<img src="captures/image_3.PNG" alt="clientes">
+<img src="captures/image_4.PNG" alt="clientes">
 
 ## Requisitos
 
