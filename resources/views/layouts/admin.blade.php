@@ -25,7 +25,7 @@
     </div>
 </aside>
 <main class="admin-main">
-    <header class="admin-topbar"><span>HORUS <span>/</span> @yield('breadcrumb', 'Resumen')</span><span class="topbar-date">{{ now()->translatedFormat('l, d \\d\\e F Y') }}</span></header>
+    <header class="admin-topbar"><span>HORUS <span>/</span> @yield('breadcrumb', 'Resumen')</span><span class="topbar-date">{{ now()->locale('es')->translatedFormat('l, d \\d\\e F \\d\\e Y') }}</span></header>
     <div class="admin-content">
         @if (session('success'))<div class="alert-success" role="status">{{ session('success') }}</div>@endif
         @if ($errors->any())<div class="alert-error" role="alert">@foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif

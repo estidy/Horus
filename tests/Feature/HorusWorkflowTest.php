@@ -7,6 +7,7 @@ use App\Models\Inquiry;
 use App\Models\Payment;
 use App\Models\Quote;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -40,6 +41,20 @@ class HorusWorkflowTest extends TestCase
     {
         $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
         $this->get(route('admin.clientes.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_admin_header_date_is_displayed_in_spanish(): void
+    {
+        Carbon::setTestNow('2026-11-18 12:00:00');
+
+        try {
+            $this->actingAs(User::factory()->create())
+                ->get(route('admin.dashboard'))
+                ->assertOk()
+                ->assertSee('miércoles, 18 de noviembre de 2026');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_login_and_admin_forms_render(): void
