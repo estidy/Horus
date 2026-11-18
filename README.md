@@ -2,6 +2,8 @@
 
 Sitio público y panel de gestión desarrollado con Laravel 12, PHP 8.2+ y MariaDB. Incluye consultas de potenciales clientes, administración de clientes y presupuestos, estadísticas y descarga de presupuestos en PDF.
 
+<img src="captures/image_0.PNG" alt="landing page">
+
 ## Requisitos
 
 - Docker Desktop con el motor iniciado.
