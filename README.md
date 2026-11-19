@@ -107,7 +107,7 @@ Abrí <http://127.0.0.1:8000>.
 - Acceso de administrador sin registro público.
 - ABM de clientes.
 - Presupuestos con cliente, obra, tareas con importes opcionales de mano de obra por tarea, subtotal de mano de obra calculado automáticamente, materiales, total y vencimiento automático a 21 días. El estado se gestiona internamente y no se incluye en el PDF para el cliente.
-- Seguimiento de pagos parciales para presupuestos aceptados: fecha, importe, medio, referencia y notas; el sistema calcula el total abonado y el saldo, evita registrar importes superiores al saldo y permite corregir un pago eliminándolo.
+- Seguimiento de pagos parciales para presupuestos aceptados: fecha, importe, medio, referencia y notas; el sistema calcula el total abonado y el saldo, acepta importes de hasta $ 100.000 por encima del saldo registrando solo lo pendiente y permite modificar o eliminar pagos.
 - Descarga de un reporte PDF de pagos independiente del presupuesto, con historial de movimientos, total abonado y saldo pendiente.
 - Búsqueda por nombre de cliente u obra y filtro por estado.
 - Vista detallada y descarga del presupuesto en PDF.

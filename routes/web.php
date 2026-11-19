@@ -22,6 +22,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::resource('clientes', ClientController::class)->except(['show'])->parameters(['clientes' => 'client']);
     Route::post('/presupuestos/{quote}/pagos', [PaymentController::class, 'store'])->name('presupuestos.pagos.store');
     Route::get('/presupuestos/{quote}/pagos/pdf', [PaymentController::class, 'pdf'])->name('presupuestos.pagos.pdf');
+    Route::get('/presupuestos/{quote}/pagos/{payment}/editar', [PaymentController::class, 'edit'])->name('presupuestos.pagos.edit');
+    Route::put('/presupuestos/{quote}/pagos/{payment}', [PaymentController::class, 'update'])->name('presupuestos.pagos.update');
     Route::delete('/presupuestos/{quote}/pagos/{payment}', [PaymentController::class, 'destroy'])->name('presupuestos.pagos.destroy');
     Route::get('/presupuestos/{quote}/pdf', [QuoteController::class, 'pdf'])->name('presupuestos.pdf');
     Route::resource('presupuestos', QuoteController::class)->parameters(['presupuestos' => 'quote']);

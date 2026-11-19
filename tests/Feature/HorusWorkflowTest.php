@@ -319,7 +319,7 @@ class HorusWorkflowTest extends TestCase
 
         $this->from(route('admin.presupuestos.show', $quote))
             ->post(route('admin.presupuestos.pagos.store', $quote), [
-                'amount' => '500.01',
+                'amount' => '100500.01',
                 'payment_date' => '2026-04-12',
                 'method' => 'transfer',
             ])
@@ -330,6 +330,71 @@ class HorusWorkflowTest extends TestCase
         $this->delete(route('admin.presupuestos.pagos.destroy', [$quote, $payment]))
             ->assertRedirect(route('admin.presupuestos.show', $quote));
         $this->assertDatabaseMissing('payments', ['id' => $payment->id]);
+    }
+
+    public function test_payment_overage_is_capped_and_payments_can_be_edited(): void
+    {
+        $admin = User::factory()->create();
+        $client = Client::create(['name' => 'Ana Pérez']);
+        $quote = Quote::create([
+            'client_id' => $client->id,
+            'project_name' => 'Reforma con pago final',
+            'issue_date' => '2026-04-10',
+            'expiry_date' => '2026-05-01',
+            'description' => 'Reforma.',
+            'labor_amount' => 500,
+            'materials_amount' => 0,
+            'status' => 'accepted',
+        ]);
+        $adminSession = $this->actingAs($admin);
+
+        $adminSession->post(route('admin.presupuestos.pagos.store', $quote), [
+            'amount' => '100500.01',
+            'payment_date' => '2026-04-12',
+            'method' => 'transfer',
+        ])->assertSessionHasErrors('amount');
+        $this->assertDatabaseCount('payments', 0);
+
+        $adminSession->post(route('admin.presupuestos.pagos.store', $quote), [
+            'amount' => '100500.00',
+            'payment_date' => '2026-04-12',
+            'method' => 'transfer',
+        ])->assertRedirect(route('admin.presupuestos.show', $quote));
+
+        $payment = Payment::firstOrFail();
+        $this->assertSame('500.00', $payment->amount);
+        $adminSession->get(route('admin.presupuestos.show', $quote))
+            ->assertOk()
+            ->assertSee('$ 0,00')
+            ->assertSee('Modificar');
+        $adminSession->get(route('admin.presupuestos.pagos.edit', [$quote, $payment]))
+            ->assertOk()
+            ->assertSee('Modificar pago');
+
+        $adminSession->put(route('admin.presupuestos.pagos.update', [$quote, $payment]), [
+            'amount' => '100500.01',
+            'payment_date' => '2026-04-13',
+            'method' => 'cash',
+            'reference' => 'EF-456',
+            'notes' => 'Pago actualizado',
+        ])->assertSessionHasErrors('amount');
+
+        $this->assertSame('500.00', $payment->fresh()->amount);
+        $adminSession->put(route('admin.presupuestos.pagos.update', [$quote, $payment]), [
+            'amount' => '100500.00',
+            'payment_date' => '2026-04-13',
+            'method' => 'cash',
+            'reference' => 'EF-456',
+            'notes' => 'Pago actualizado',
+        ])->assertRedirect(route('admin.presupuestos.show', $quote));
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'amount' => '500.00',
+            'method' => 'cash',
+            'reference' => 'EF-456',
+            'notes' => 'Pago actualizado',
+        ]);
     }
 
     public function test_payments_are_only_allowed_for_accepted_quotes(): void

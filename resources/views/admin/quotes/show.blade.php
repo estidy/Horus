@@ -34,7 +34,7 @@
             @if ($quote->payments->isNotEmpty())
                 <div class="table-scroll payment-history"><table><thead><tr><th>FECHA</th><th>MEDIO</th><th>REFERENCIA</th><th>NOTAS</th><th>IMPORTE</th><th></th></tr></thead><tbody>
                     @foreach ($quote->payments->sortByDesc('payment_date') as $payment)
-                        <tr><td>{{ $payment->payment_date->format('d/m/Y') }}</td><td>{{ \App\Models\Payment::METHODS[$payment->method] }}</td><td>{{ $payment->reference ?: '—' }}</td><td>{{ $payment->notes ?: '—' }}</td><td class="table-strong">$ {{ number_format((float) $payment->amount, 2, ',', '.') }}</td><td><form method="post" action="{{ route('admin.presupuestos.pagos.destroy', [$quote, $payment]) }}" onsubmit="return confirm('¿Eliminar este pago? El saldo pendiente se actualizará.')">@csrf @method('DELETE')<button class="row-action row-danger" type="submit">Eliminar</button></form></td></tr>
+                        <tr><td>{{ $payment->payment_date->format('d/m/Y') }}</td><td>{{ \App\Models\Payment::METHODS[$payment->method] }}</td><td>{{ $payment->reference ?: '—' }}</td><td>{{ $payment->notes ?: '—' }}</td><td class="table-strong">$ {{ number_format((float) $payment->amount, 2, ',', '.') }}</td><td><div class="row-actions"><a class="row-action" href="{{ route('admin.presupuestos.pagos.edit', [$quote, $payment]) }}">Modificar</a><form method="post" action="{{ route('admin.presupuestos.pagos.destroy', [$quote, $payment]) }}" onsubmit="return confirm('¿Eliminar este pago? El saldo pendiente se actualizará.')">@csrf @method('DELETE')<button class="row-action row-danger" type="submit">Eliminar</button></form></div></td></tr>
                     @endforeach
                 </tbody></table></div>
             @else
@@ -45,7 +45,7 @@
                     @csrf
                     <h3>Registrar un pago</h3>
                     <div class="payment-fields">
-                        <label>Importe (ARS) <span>*</span><input name="amount" type="number" min="0.01" max="{{ number_format($remainingAmount, 2, '.', '') }}" step="0.01" value="{{ old('amount') }}" required></label>
+                        <label>Importe (ARS) <span>*</span><input name="amount" type="number" min="0.01" max="{{ number_format($remainingAmount + 100000, 2, '.', '') }}" step="0.01" value="{{ old('amount') }}" required><small>Se acepta hasta $ 100.000,00 por encima del saldo; solo se registrará lo pendiente.</small></label>
                         <label>Fecha de pago <span>*</span><input name="payment_date" type="date" max="{{ now()->toDateString() }}" value="{{ old('payment_date', now()->toDateString()) }}" required></label>
                         <label>Medio de pago <span>*</span><select name="method" required>@foreach (\App\Models\Payment::METHODS as $key => $label)<option value="{{ $key }}" @selected(old('method') === $key)>{{ $label }}</option>@endforeach</select></label>
                         <label>Referencia <span>(opcional)</span><input name="reference" value="{{ old('reference') }}" maxlength="120" placeholder="N.º de operación"></label>
